@@ -270,6 +270,7 @@ const MenuPage = () => {
             </div>
             <span className="text-[10px]">Savat</span>
           </button>
+       
         </div>
 
         {isBasketOpen && (
