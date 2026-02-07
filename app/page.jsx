@@ -82,7 +82,6 @@ const FoodCard = ({ food, onToggle, isAdded }) => {
 };
 
 const MenuPage = () => {
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Barchasi");
   const [basket, setBasket] = useState([]);
@@ -500,6 +499,6 @@ const MenuPage = () => {
       </div>
     </div>
   );
-};;
+};
 
 export default MenuPage;
