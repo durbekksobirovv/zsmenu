@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   BellRing, // Yangi belgi
 } from "lucide-react";
+import Link from "next/link";
 
 const API_BASE_URL = "https://food-ordering-api-aapf.onrender.com/api";
 
@@ -240,7 +241,10 @@ const MenuPage = () => {
                 FOOD<span className="text-orange-500">FAST</span>
               </h1>
               <div className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 cursor-pointer">
-                <User size={24} />
+                <Link href={"/admin"}>
+                  {" "}
+                  <User size={24} />
+                </Link>
               </div>
             </div>
             <div className="relative mb-2">
