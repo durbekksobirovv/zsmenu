@@ -18,7 +18,8 @@ import {
   TrendingUp,
   DollarSign,
   ShoppingBag,
-  RotateCcw, // Yangi belgi: Statistika reset qilish uchun
+  RotateCcw,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -29,12 +30,12 @@ const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState(false);
-  const ADMIN_PASSWORD = "123";
+  const ADMIN_PASSWORD = "Zoirbek";
 
   const [activeTab, setActiveTab] = useState("orders");
   const [foods, setFoods] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [archivedOrders, setArchivedOrders] = useState([]); // ARXIV UCHUN STATE
+  const [archivedOrders, setArchivedOrders] = useState([]);
 
   const [categories, setCategories] = useState([
     "Fastfud",
@@ -66,13 +67,12 @@ const AdminPage = () => {
     }
   }, []);
 
-  // --- STATISTIKA HISOBLASH (FAOL + ARXIVDAGILAR) ---
+  // --- STATISTIKA HISOBLASH ---
   const statsSummary = useMemo(() => {
     let totalRevenue = 0;
     let totalItems = 0;
     const itemStats = {};
 
-    // Barcha buyurtmalarni birlashtiramiz
     const allOrders = [...orders, ...archivedOrders];
 
     allOrders.forEach((order) => {
@@ -139,7 +139,7 @@ const AdminPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       loadData();
-      const interval = setInterval(loadData, 10000);
+      const interval = setInterval(loadData, 5000); // 5 soniyada yangilab turadi
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
@@ -166,11 +166,31 @@ const AdminPage = () => {
     }
   };
 
-  // --- BUYURTMANI BAJARISH VA ARXIVLASH ---
-  const deleteOrder = async (orderId) => {
-    if (!confirm("Buyurtma bajarildimi? Statistika saqlanadi.")) return;
+  // --- STATUSNI YANGILASH (Mijozga bildirishnoma yuborish) ---
+  const updateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        loadData();
+      }
+    } catch (error) {
+      console.error("Statusni yangilashda xato:", error);
+    }
+  };
 
-    // O'chirilayotgan buyurtma ob'ektini topib olamiz
+  // --- BUYURTMANI YAKUNLASH VA ARXIVLASH ---
+  const archiveOrder = async (orderId) => {
+    if (
+      !confirm(
+        "Buyurtma yakunlandimi? U bazadan o'chiriladi va statistikaga qo'shiladi.",
+      )
+    )
+      return;
+
     const orderToArchive = orders.find((o) => o.id === orderId);
 
     try {
@@ -187,14 +207,6 @@ const AdminPage = () => {
       }
     } catch (error) {
       alert("O'chirishda xato!");
-    }
-  };
-
-  // ARXIVNI TOZALASH (Statistikani nollash uchun)
-  const resetStats = () => {
-    if (confirm("Haqiqatan ham barcha arxiv statistikani nollamoqchimisiz?")) {
-      setArchivedOrders([]);
-      localStorage.removeItem("food_archive");
     }
   };
 
@@ -222,6 +234,13 @@ const AdminPage = () => {
       time: "15 daqiqa",
       rating: "5.0",
     });
+  };
+
+  const resetStats = () => {
+    if (confirm("Haqiqatan ham barcha arxiv statistikani nollamoqchimisiz?")) {
+      setArchivedOrders([]);
+      localStorage.removeItem("food_archive");
+    }
   };
 
   if (!isAuthenticated) {
@@ -302,7 +321,7 @@ const AdminPage = () => {
       {/* MAIN CONTENT */}
       <main className="flex-1 md:ml-64 pb-24 md:pb-8">
         <header className="bg-white border-b border-slate-200 p-6 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-          <h1 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight">
+          <h1 className="text-xl md:text-2xl font-black text-slate-800 uppercase">
             {activeTab === "orders"
               ? "Buyurtmalar"
               : activeTab === "menu"
@@ -311,100 +330,91 @@ const AdminPage = () => {
                   ? "Kategoriyalar"
                   : "Statistika"}
           </h1>
-          <div className="flex items-center gap-4">
-            {activeTab === "stats" && (
-              <button
-                onClick={resetStats}
-                className="flex items-center gap-2 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                <RotateCcw size={14} /> Statistikani Tozalash
-              </button>
-            )}
-            <div className="hidden sm:flex items-center gap-2 text-slate-500 font-bold text-sm bg-slate-100 px-4 py-2 rounded-full">
-              <TrendingUp size={16} className="text-teal-600" /> Umumiy faollik
-            </div>
-          </div>
+          {activeTab === "stats" && (
+            <button
+              onClick={resetStats}
+              className="flex items-center gap-2 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100"
+            >
+              <RotateCcw size={14} /> Tozalash
+            </button>
+          )}
         </header>
 
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
-          {/* --- DOIMIY STATISTIKA KARTALARI --- */}
+          {/* STATS CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-4">
-                <DollarSign size={20} />
-              </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+              <DollarSign className="text-teal-600 mb-2" size={20} />
+              <p className="text-slate-400 text-[10px] font-bold uppercase">
                 Umumiy Savdo
               </p>
-              <h2 className="text-2xl font-black text-slate-800 mt-1">
+              <h2 className="text-2xl font-black">
                 {statsSummary.totalRevenue.toLocaleString()}{" "}
-                <span className="text-sm font-normal text-slate-400">uzs</span>
+                <span className="text-sm font-normal">uzs</span>
               </h2>
             </div>
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-4">
-                <Package size={20} />
-              </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                Jami Buyurtmalar
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+              <Package className="text-blue-600 mb-2" size={20} />
+              <p className="text-slate-400 text-[10px] font-bold uppercase">
+                Buyurtmalar
               </p>
-              <h2 className="text-2xl font-black text-slate-800 mt-1">
+              <h2 className="text-2xl font-black">
                 {statsSummary.totalOrders}{" "}
-                <span className="text-sm font-normal text-slate-400">ta</span>
+                <span className="text-sm font-normal">ta</span>
               </h2>
             </div>
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 mb-4">
-                <ShoppingBag size={20} />
-              </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+              <ShoppingBag className="text-orange-600 mb-2" size={20} />
+              <p className="text-slate-400 text-[10px] font-bold uppercase">
                 Sotilganlar
               </p>
-              <h2 className="text-2xl font-black text-slate-800 mt-1">
+              <h2 className="text-2xl font-black">
                 {statsSummary.totalItems}{" "}
-                <span className="text-sm font-normal text-slate-400">dona</span>
+                <span className="text-sm font-normal">dona</span>
               </h2>
             </div>
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4">
-                <Utensils size={20} />
-              </div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                Eng o'tishli taom
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+              <Utensils className="text-purple-600 mb-2" size={20} />
+              <p className="text-slate-400 text-[10px] font-bold uppercase">
+                Top Taom
               </p>
-              <h2 className="text-lg font-black text-slate-800 mt-1 truncate">
+              <h2 className="text-lg font-black truncate">
                 {statsSummary.topDish}
               </h2>
             </div>
           </div>
 
-          <hr className="border-slate-200" />
-
-          {/* TAB CONTENT */}
           {activeTab === "orders" ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {orders.length === 0 ? (
-                <div className="col-span-full text-center py-20 text-slate-400 bg-white rounded-3xl border border-dashed border-slate-300">
+                <div className="col-span-full text-center py-20 text-slate-400 bg-white rounded-3xl border-2 border-dashed border-slate-200">
                   Hozircha yangi buyurtmalar yo'q
                 </div>
               ) : (
                 orders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                    className={`bg-white rounded-3xl p-6 shadow-sm border transition-all ${order.status === "Tayyor" ? "border-green-200 bg-green-50/20" : "border-slate-100"}`}
                   >
-                    <div className="mb-4">
-                      <h3 className="font-bold text-lg text-slate-800">
-                        {order.customerName || "Mijoz"}
-                      </h3>
-                      <a
-                        href={`tel:${order.customerPhone}`}
-                        className="text-teal-600 font-bold flex items-center gap-2 text-sm"
-                      >
-                        <Phone size={14} /> {order.customerPhone}
-                      </a>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg">
+                          {order.customerName || "Mijoz"}
+                        </h3>
+                        <a
+                          href={`tel:${order.customerPhone}`}
+                          className="text-teal-600 font-bold flex items-center gap-2 text-sm"
+                        >
+                          <Phone size={14} /> {order.customerPhone}
+                        </a>
+                      </div>
+                      {order.status === "Tayyor" && (
+                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                          Tayyor
+                        </span>
+                      )}
                     </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 space-y-2 mb-6">
+                    <div className="bg-white/50 border border-slate-100 rounded-2xl p-4 space-y-2 mb-6">
                       {order.items?.map((item, idx) => (
                         <div key={idx} className="flex justify-between text-sm">
                           <span>
@@ -419,12 +429,26 @@ const AdminPage = () => {
                         </div>
                       ))}
                     </div>
-                    <button
-                      onClick={() => deleteOrder(order.id)}
-                      className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-bold transition-colors"
-                    >
-                      Tayyor / Bajarildi
-                    </button>
+                    <div className="space-y-2">
+                      {order.status !== "Tayyor" ? (
+                        <button
+                          onClick={() => updateStatus(order.id, "Tayyor")}
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle2 size={18} /> Tayyor (Mijozga xabar)
+                        </button>
+                      ) : (
+                        <div className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2">
+                          Xabar yuborilgan ✅
+                        </div>
+                      )}
+                      <button
+                        onClick={() => archiveOrder(order.id)}
+                        className="w-full bg-teal-900 hover:bg-black text-white py-3 rounded-xl font-bold transition-all"
+                      >
+                        Yakunlash (Arxivlash)
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -432,9 +456,7 @@ const AdminPage = () => {
           ) : activeTab === "menu" ? (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-bold text-slate-700">
-                  Taomlar Ro'yxati ({foods.length})
-                </h2>
+                <h2 className="font-bold">Taomlar Ro'yxati ({foods.length})</h2>
                 <button
                   onClick={() => {
                     setEditMode(false);
@@ -442,27 +464,25 @@ const AdminPage = () => {
                   }}
                   className="bg-teal-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"
                 >
-                  <Plus size={20} /> Taom Qo'shish
+                  <Plus size={20} /> Qo'shish
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {foods.map((food) => (
                   <div
                     key={food.id}
-                    className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm group relative overflow-hidden"
+                    className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm group relative"
                   >
                     <img
                       src={food.img}
                       className="w-full h-40 rounded-2xl object-cover mb-4"
                       alt=""
                     />
-                    <h4 className="font-bold text-slate-800 truncate">
-                      {food.title}
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-black uppercase mb-2">
+                    <h4 className="font-bold truncate">{food.title}</h4>
+                    <p className="text-[10px] text-slate-400 font-black uppercase">
                       {food.category}
                     </p>
-                    <p className="text-teal-700 font-black">
+                    <p className="text-teal-700 font-black mt-2">
                       {Number(food.price).toLocaleString()} so'm
                     </p>
                     <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -489,13 +509,12 @@ const AdminPage = () => {
             </div>
           ) : activeTab === "categories" ? (
             <div className="max-w-2xl mx-auto space-y-6">
-              {/* Kategoriyalar bo'limi kodingiz o'zgarmadi */}
-              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100">
                 <h2 className="text-xl font-bold mb-6">Yangi Kategoriya</h2>
                 <div className="flex gap-4">
                   <input
-                    className="flex-1 bg-slate-50 p-4 rounded-2xl outline-none border border-slate-100 focus:border-teal-500"
-                    placeholder="Nomini yozing..."
+                    className="flex-1 bg-slate-50 p-4 rounded-2xl outline-none border border-slate-100"
+                    placeholder="Nomi..."
                     value={newCatInput}
                     onChange={(e) => setNewCatInput(e.target.value)}
                   />
@@ -512,15 +531,15 @@ const AdminPage = () => {
                   </button>
                 </div>
               </div>
-              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                <h2 className="text-xl font-bold mb-6">Mavjud Kategoriyalar</h2>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100">
+                <h2 className="text-xl font-bold mb-6">Mavjudlar</h2>
                 <div className="grid gap-3">
                   {categories.map((cat, i) => (
                     <div
                       key={i}
                       className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl group"
                     >
-                      <span className="font-bold text-slate-700">{cat}</span>
+                      <span className="font-bold">{cat}</span>
                       <button
                         onClick={() =>
                           setCategories(categories.filter((c) => c !== cat))
@@ -535,20 +554,18 @@ const AdminPage = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-slate-800">
-                  Sotuvlar Bo'yicha Tahlil (Arxiv bilan)
-                </h2>
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden">
+              <div className="p-8 border-b bg-slate-50/50">
+                <h2 className="text-xl font-bold">Sotuvlar Tahlili</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+                    <tr className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black">
                       <th className="px-8 py-4">Taom nomi</th>
-                      <th className="px-8 py-4 text-center">Sotilgan soni</th>
+                      <th className="px-8 py-4 text-center">Sotilgan</th>
                       <th className="px-8 py-4">Narxi</th>
-                      <th className="px-8 py-4 text-right">Umumiy tushum</th>
+                      <th className="px-8 py-4 text-right">Tushum</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -568,7 +585,7 @@ const AdminPage = () => {
                         <td className="px-8 py-5 text-slate-500 text-sm">
                           {data.price.toLocaleString()} so'm
                         </td>
-                        <td className="px-8 py-5 text-right font-black text-slate-900">
+                        <td className="px-8 py-5 text-right font-black">
                           {data.totalSum.toLocaleString()} so'm
                         </td>
                       </tr>
@@ -581,39 +598,39 @@ const AdminPage = () => {
         </div>
       </main>
 
-      {/* MOBILE NAV (Oldingi kodingiz bilan bir xil) */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around items-center z-40 shadow-2xl">
+      {/* MOBILE NAV */}
+      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around items-center z-40">
         <button
           onClick={() => setActiveTab("orders")}
           className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl ${activeTab === "orders" ? "text-teal-600 bg-teal-50" : "text-slate-400"}`}
         >
-          <Package size={22} />{" "}
+          <Package size={22} />
           <span className="text-[10px] font-bold">Zakaslar</span>
         </button>
         <button
           onClick={() => setActiveTab("menu")}
           className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl ${activeTab === "menu" ? "text-teal-600 bg-teal-50" : "text-slate-400"}`}
         >
-          <Utensils size={22} />{" "}
+          <Utensils size={22} />
           <span className="text-[10px] font-bold">Taomlar</span>
         </button>
         <button
           onClick={() => setActiveTab("categories")}
           className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl ${activeTab === "categories" ? "text-teal-600 bg-teal-50" : "text-slate-400"}`}
         >
-          <Tag size={22} />{" "}
+          <Tag size={22} />
           <span className="text-[10px] font-bold">Kateg...</span>
         </button>
         <button
           onClick={() => setActiveTab("stats")}
           className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl ${activeTab === "stats" ? "text-teal-600 bg-teal-50" : "text-slate-400"}`}
         >
-          <BarChart3 size={22} />{" "}
+          <BarChart3 size={22} />
           <span className="text-[10px] font-bold">Stats</span>
         </button>
       </nav>
 
-      {/* MODAL (Oldingi kodingiz bilan bir xil) */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -673,7 +690,7 @@ const AdminPage = () => {
                   type="number"
                   required
                   className="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 font-bold text-teal-700"
-                  placeholder="Narxi (so'm)"
+                  placeholder="Narxi"
                   value={currentFood.price}
                   onChange={(e) =>
                     setCurrentFood({ ...currentFood, price: e.target.value })
@@ -695,7 +712,7 @@ const AdminPage = () => {
               </div>
               <button
                 type="submit"
-                className="w-full bg-teal-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg"
+                className="w-full bg-teal-600 text-white py-4 rounded-2xl font-bold text-lg"
               >
                 Saqlash
               </button>
