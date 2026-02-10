@@ -34,7 +34,7 @@ const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState(false);
-  const ADMIN_PASSWORD = "Zoirbek";
+  const ADMIN_PASSWORD = "958161151";
 
   const [activeTab, setActiveTab] = useState("orders");
   const [foods, setFoods] = useState([]);
