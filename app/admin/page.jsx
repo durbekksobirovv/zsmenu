@@ -51,7 +51,7 @@ const AdminPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  const API_BASE_URL = "https://food-ordering-api-aapf.onrender.com/api";
+  const API_BASE_URL = "https://food-ordering-api-1-6t2z.onrender.com/api";
 
   const [currentFood, setCurrentFood] = useState({
     id: null,

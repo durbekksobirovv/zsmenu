@@ -14,52 +14,66 @@ import {
   X,
   Trash2,
   CheckCircle2,
-  BellRing, // Yangi belgi
+  BellRing,
 } from "lucide-react";
 import Link from "next/link";
 
-const API_BASE_URL = "https://food-ordering-api-aapf.onrender.com/api";
+const API_BASE_URL = "https://food-ordering-api-1-6t2z.onrender.com/api";
 
-// FoodCard komponenti o'zgarishsiz qoladi...
-const FoodCard = ({ food, onToggle, isAdded }) => {
-  const [showHeart, setShowHeart] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const handleDoubleClick = () => {
-    setIsLiked(!isLiked);
-    setShowHeart(true);
-    setTimeout(() => setShowHeart(false), 800);
-  };
+// --- FOOD CARD KOMPONENTI ---
+const FoodCard = ({ food, onUpdate, quantity }) => {
+
+
   return (
     <div className="bg-white rounded-xl shadow-sm animate-in fade-in zoom-in duration-300 border border-gray-50 flex flex-col">
       <div
         className="relative h-32 sm:h-40 w-full cursor-pointer select-none"
-        onDoubleClick={handleDoubleClick}
+        
       >
         <img
           src={food.img}
           alt={food.title}
           className="w-full h-full rounded-t-xl object-cover shadow-sm"
         />
-        {showHeart && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 animate-bounce">
-            <Heart
-              size={40}
-              className={`${isLiked ? "text-red-500 fill-red-500" : "text-gray-400 fill-gray-400"} drop-shadow-lg`}
-            />
-          </div>
-        )}
-        <button
-          onClick={() => onToggle(food)}
-          className={`absolute -top-1 -right-1 p-1.5 rounded-full transition-all duration-300 shadow-md border-2 border-white z-20 
-          ${isAdded ? "bg-orange-500 text-white scale-110" : "bg-teal-800 text-white active:scale-95"}`}
-        >
-          {isAdded ? (
-            <Check size={16} strokeWidth={3} />
+      
+        
+        
+
+        {/* PLUS/MINUS MANTIQI */}
+        <div className="absolute -top-1 -right-1 z-20">
+          {quantity > 0 ? (
+            <div className="flex items-center bg-orange-500 text-white rounded-full shadow-md border-2 border-white transition-all duration-300 overflow-hidden">
+              <button
+                onClick={() => onUpdate(food.id, -1)}
+                className="p-1.5 hover:bg-orange-600 active:scale-90 transition-transform"
+              >
+                <span className="text-sm font-black w-4 h-4 flex items-center justify-center">
+                  -
+                </span>
+              </button>
+
+              <span className="px-1 text-[11px] font-black min-w-[18px] text-center">
+                {quantity}
+              </span>
+
+              <button
+                onClick={() => onUpdate(food.id, 1)}
+                className="p-1.5 hover:bg-orange-600 active:scale-90 transition-transform"
+              >
+                <Plus size={14} strokeWidth={4} />
+              </button>
+            </div>
           ) : (
-            <Plus size={16} strokeWidth={3} />
+            <button
+              onClick={() => onUpdate(food.id, 1)}
+              className="bg-teal-800 text-white p-1.5 rounded-full transition-all duration-300 shadow-md border-2 border-white active:scale-95"
+            >
+              <Plus size={16} strokeWidth={3} />
+            </button>
           )}
-        </button>
+        </div>
       </div>
+
       <div className="px-3 pb-4 pt-2 flex-1 flex flex-col justify-between">
         <div>
           <h3 className="font-bold text-gray-800 text-xs sm:text-sm mb-1 truncate">
@@ -82,6 +96,7 @@ const FoodCard = ({ food, onToggle, isAdded }) => {
   );
 };
 
+// --- ASOSIY SAHIFA ---
 const MenuPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Barchasi");
@@ -92,8 +107,6 @@ const MenuPage = () => {
   const [dynamicCategories, setDynamicCategories] = useState(["Barchasi"]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("+998");
-
-  // --- YANGI STATELAR ---
   const [lastOrderId, setLastOrderId] = useState(null);
   const [showOrderReadyModal, setShowOrderReadyModal] = useState(false);
 
@@ -118,38 +131,57 @@ const MenuPage = () => {
     fetchFoods();
   }, []);
 
-  // --- ADMIN PANELNI KUZATISH (POLLING) ---
+  // Admin polling mantiqi
   useEffect(() => {
     let interval;
     if (lastOrderId) {
       interval = setInterval(async () => {
         try {
-          // Barcha zakaslarni olamiz
           const res = await fetch(`${API_BASE_URL}/orders`);
           if (res.ok) {
             const allOrders = await res.json();
-            // Bizning zakasimizni ID orqali topamiz
-            const myOrder = allOrders.find((o) => o.id === lastOrderId);
-
-            // Agar zakas topilsa va statusi "Tayyor" bo'lsa
+            const myOrder = allOrders.find(
+              (o) => (o.id || o._id) === lastOrderId,
+            );
             if (myOrder && myOrder.status === "Tayyor") {
               setShowOrderReadyModal(true);
-              setLastOrderId(null); // Tekshirishni to'xtatamiz
+              setLastOrderId(null);
               clearInterval(interval);
             }
           }
         } catch (e) {
           console.error("Status tekshirishda xato:", e);
         }
-      }, 5000); // Har 5 soniyada tekshiradi
+      }, 5000);
     }
     return () => clearInterval(interval);
   }, [lastOrderId]);
 
+  // Savatdagi sonni o'zgartirish (Card va Savat uchun umumiy)
+  const handleQuantityChange = (id, delta) => {
+    setBasket((prev) => {
+      const existing = prev.find((item) => item.id === id);
+      if (existing) {
+        const newQuantity = existing.quantity + delta;
+        if (newQuantity <= 0) return prev.filter((item) => item.id !== id);
+        return prev.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item,
+        );
+      } else if (delta > 0) {
+        const foodToAdd = foods.find((f) => f.id === id);
+        return [...prev, { ...foodToAdd, quantity: 1 }];
+      }
+      return prev;
+    });
+  };
+
   const handleOrder = async () => {
-    if (basket.length === 0) return;
-    if (!customerName.trim() || !customerPhone.trim()) {
-      alert("Iltimos, ismingiz va telefon raqamingizni kiriting!");
+    if (
+      basket.length === 0 ||
+      !customerName.trim() ||
+      customerPhone.length < 13
+    ) {
+      alert("Ma'lumotlarni to'liq kiriting!");
       return;
     }
     setOrderStatus("loading");
@@ -169,17 +201,17 @@ const MenuPage = () => {
             (sum, item) => sum + item.price * item.quantity,
             0,
           ),
-          status: "Kutilmoqda", // Boshlang'ich status
+          status: "Kutilmoqda",
           date: new Date().toLocaleString(),
         }),
       });
       if (res.ok) {
         const result = await res.json();
-        setLastOrderId(result.id || result._id); // Serverdan qaytgan ID ni saqlaymiz
+        setLastOrderId(result.id || result._id);
         setOrderStatus("success");
         setBasket([]);
         setCustomerName("");
-        setCustomerPhone("");
+        setCustomerPhone("+998");
         setTimeout(() => {
           setIsBasketOpen(false);
           setOrderStatus("idle");
@@ -188,25 +220,6 @@ const MenuPage = () => {
     } catch (e) {
       setOrderStatus("idle");
     }
-  };
-
-  // ... (toggleBasket va updateQuantity funksiyalari o'zgarishsiz qoladi)
-  const toggleBasket = (food) => {
-    setBasket((prev) => {
-      const existing = prev.find((item) => item.id === food.id);
-      if (existing) return prev.filter((item) => item.id !== food.id);
-      return [...prev, { ...food, quantity: 1 }];
-    });
-  };
-
-  const updateQuantity = (id, delta) => {
-    setBasket((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item,
-      ),
-    );
   };
 
   const filteredFoods = foods.filter((f) => {
@@ -221,7 +234,7 @@ const MenuPage = () => {
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen">
       <div className="w-full max-w-5xl bg-white shadow-2xl h-[100vh] flex flex-col relative overflow-hidden">
-        {/* BUYURTMA TAYYORLANAYOTGANINI BILDIRUVCHI TASMIQ */}
+        {/* TEPADAGI STATUS XABARI */}
         {lastOrderId && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] w-max animate-bounce">
             <div className="bg-orange-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 border-2 border-white">
@@ -234,7 +247,7 @@ const MenuPage = () => {
         )}
 
         <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
-          {/* Header va Qidiruv */}
+          {/* Header */}
           <div className="p-6 pb-2 max-w-2xl mx-auto w-full">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-black text-gray-800 italic">
@@ -242,7 +255,6 @@ const MenuPage = () => {
               </h1>
               <div className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 cursor-pointer">
                 <Link href={"/admin"}>
-                  {" "}
                   <User size={24} />
                 </Link>
               </div>
@@ -281,45 +293,45 @@ const MenuPage = () => {
           {/* Food Grid */}
           <div className="bg-[#b7d5d4] min-h-full rounded-t-[2.5rem] sm:rounded-t-[4rem] p-6 pt-8">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-              {filteredFoods.map((food, index) => (
-                <FoodCard
-                  key={food.id || index}
-                  food={food}
-                  onToggle={toggleBasket}
-                  isAdded={basket.some((i) => i.id === food.id)}
-                />
-              ))}
+              {filteredFoods.map((food, index) => {
+                const basketItem = basket.find((i) => i.id === food.id);
+                return (
+                  <FoodCard
+                    key={food.id || index}
+                    food={food}
+                    onUpdate={handleQuantityChange}
+                    quantity={basketItem ? basketItem.quantity : 0}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* --- YANGI: TAYYOR BO'LDI MODALI (Admin bajarildini bosganda chiqadi) --- */}
+        {/* MODALLAR VA NAVIGATSIYA (Sizning kodingiz bilan bir xil) */}
         {showOrderReadyModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-teal-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl flex flex-col items-center text-center animate-in zoom-in duration-500 border-4 border-orange-500">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-teal-900/60 backdrop-blur-md">
+            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl flex flex-col items-center text-center animate-in zoom-in border-4 border-orange-500">
               <div className="w-24 h-24 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-6 shadow-lg border-2 border-white">
                 <BellRing size={50} className="animate-ring" />
               </div>
-              <h2 className="text-3xl font-black text-gray-800 mb-2 leading-tight">
+              <h2 className="text-3xl font-black text-gray-800 mb-2">
                 BUYURTMANGIZ TAYYOR!
               </h2>
               <p className="text-gray-500 font-bold mb-8">
-                Sizning buyurtmangiz tayyor bo'ldi. Uni olib ketishingiz yoki
-                kutib olishingiz mumkin. Yoqimli ishtaha! 😋
+                Yoqimli ishtaha! 😋
               </p>
               <button
                 onClick={() => setShowOrderReadyModal(false)}
-                className="w-full py-4 bg-teal-900 text-white rounded-[2rem] font-black text-lg shadow-xl active:scale-95 transition-all"
+                className="w-full py-4 bg-teal-900 text-white rounded-[2rem] font-black text-lg"
               >
-                RAHMAT, TUSHUNDIM
+                RAHMAT
               </button>
             </div>
           </div>
         )}
 
-        {/* Savat tugmasi (Bottom Nav) */}
         <div className="absolute bottom-0 w-full bg-white/90 backdrop-blur-md border-t p-4 flex justify-around items-center z-40">
-          {/* ... oldingi Bottom Nav kodingiz o'zgarishsiz qoladi ... */}
           <div className="flex justify-around w-full max-w-md mx-auto">
             <button className="flex flex-col items-center gap-1 text-teal-800 font-bold">
               <ClipboardList size={22} />
@@ -345,7 +357,7 @@ const MenuPage = () => {
           </div>
         </div>
 
-        {/* Savat Modali */}
+        {/* SAVAT MODALI */}
         {isBasketOpen && (
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col justify-end items-center"
@@ -360,12 +372,9 @@ const MenuPage = () => {
                   <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle2 size={48} />
                   </div>
-                  <h2 className="text-2xl font-black text-center text-gray-800 uppercase italic">
+                  <h2 className="text-2xl font-black text-center text-gray-800 italic uppercase">
                     Qabul qilindi!
                   </h2>
-                  <p className="text-gray-400 text-sm mt-2">
-                    Buyurtmangiz holatini kuzatib turing
-                  </p>
                 </div>
               ) : (
                 <>
@@ -403,7 +412,9 @@ const MenuPage = () => {
                             </p>
                             <div className="flex items-center gap-3 mt-1">
                               <button
-                                onClick={() => updateQuantity(item.id, -1)}
+                                onClick={() =>
+                                  handleQuantityChange(item.id, -1)
+                                }
                                 className="w-7 h-7 bg-white rounded shadow-sm font-bold border border-gray-100"
                               >
                                 -
@@ -412,7 +423,7 @@ const MenuPage = () => {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => updateQuantity(item.id, 1)}
+                                onClick={() => handleQuantityChange(item.id, 1)}
                                 className="w-7 h-7 bg-white rounded shadow-sm font-bold border border-gray-100"
                               >
                                 +
@@ -460,25 +471,12 @@ const MenuPage = () => {
                           value={customerPhone}
                           onChange={(e) => {
                             const val = e.target.value;
-                            // Faqat +998 bilan boshlanishini va undan keyin faqat raqam bo'lishini ta'minlaydi
                             if (val.startsWith("+998")) {
-                              // +998 dan keyingi qismini faqat raqam ekanligini tekshiramiz
                               const digitsOnly = val
                                 .slice(4)
                                 .replace(/\D/g, "");
-                              // Maksimal uzunlik 9 ta raqam (+998 bilan jami 13 belgi)
-                              if (digitsOnly.length <= 9) {
+                              if (digitsOnly.length <= 9)
                                 setCustomerPhone("+998" + digitsOnly);
-                              }
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            // +998 qismini o'chirib yubormaslik uchun backspace'ni cheklaymiz
-                            if (
-                              e.key === "Backspace" &&
-                              customerPhone.length <= 4
-                            ) {
-                              e.preventDefault();
                             }
                           }}
                           className="w-full bg-gray-50 p-3 rounded-xl outline-none text-sm font-black border border-teal-50"
