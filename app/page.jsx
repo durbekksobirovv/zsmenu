@@ -26,18 +26,12 @@ const FoodCard = ({ food, onUpdate, quantity }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm animate-in fade-in zoom-in duration-300 border border-gray-50 flex flex-col">
-      <div
-        className="relative h-32 sm:h-40 w-full cursor-pointer select-none"
-        
-      >
+      <div className="relative h-32 sm:h-40 w-full cursor-pointer select-none">
         <img
-          src={food.img}
+          src={food.img || null} // "" o'rniga null o'tadi va brauzer xato bermaydi
           alt={food.title}
-          className="w-full h-full rounded-t-xl object-cover shadow-sm"
+          className="w-full h-40 rounded-2xl object-cover mb-4"
         />
-      
-        
-        
 
         {/* PLUS/MINUS MANTIQI */}
         <div className="absolute -top-1 -right-1 z-20">
