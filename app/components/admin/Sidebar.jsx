@@ -1,83 +1,56 @@
-import React from "react";
 import {
   LayoutDashboard,
-  ShoppingBag,
+  Package,
+  Utensils,
+  Tag,
   BarChart3,
-  Settings,
-  Sun,
-  Moon,
   LogOut,
 } from "lucide-react";
 
-const Sidebar = ({ activeTab, setActiveTab, isDarkMode, setIsDarkMode }) => {
+const Sidebar = ({
+  activeTab,
+  setActiveTab,
+  setIsAuthenticated,
+  isDarkMode,
+}) => {
   const menuItems = [
-    { id: "orders", label: "Buyurtmalar", icon: <ShoppingBag size={20} /> },
-    { id: "stats", label: "Statistika", icon: <BarChart3 size={20} /> },
-    {
-      id: "menu",
-      label: "Menyu boshqaruvi",
-      icon: <LayoutDashboard size={20} />,
-    },
-    { id: "settings", label: "Sozlamalar", icon: <Settings size={20} /> },
+    { id: "orders", icon: Package, label: "Buyurtmalar" },
+    { id: "menu", icon: Utensils, label: "Taomlar Menusi" },
+    { id: "categories", icon: Tag, label: "Kategoriyalar" },
+    { id: "stats", icon: BarChart3, label: "Statistika" },
   ];
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 w-64 transition-transform transform md:translate-x-0 -translate-x-full ${
-        isDarkMode
-          ? "bg-slate-900 border-r border-slate-800"
-          : "bg-white border-r border-slate-100"
-      }`}
+      className={`hidden md:flex w-64 flex-col fixed h-full shadow-2xl z-50 ${isDarkMode ? "bg-slate-900 border-r border-slate-800" : "bg-teal-950 text-white"}`}
     >
-      <div className="flex flex-col h-full p-6">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-teal-500 rounded-2xl flex items-center justify-center text-white font-black text-xl">
-            F
-          </div>
-          <span className="text-xl font-black tracking-tight">FoodAdmin</span>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all ${
-                activeTab === item.id
-                  ? "bg-teal-500 text-white shadow-lg shadow-teal-500/30"
-                  : isDarkMode
-                    ? "text-slate-400 hover:bg-slate-800"
-                    : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto space-y-4">
+      <div
+        className={`p-8 flex items-center gap-3 border-b ${isDarkMode ? "border-slate-800" : "border-teal-900"}`}
+      >
+        <LayoutDashboard className="text-teal-400" />
+        <span className="font-black text-xl tracking-tight">FOOD ADMIN</span>
+      </div>
+      <nav className="flex-1 p-4 space-y-2 mt-4">
+        {menuItems.map((item) => (
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all ${
-              isDarkMode
-                ? "bg-slate-800 text-yellow-400"
-                : "bg-slate-100 text-slate-600"
-            }`}
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === item.id ? "bg-teal-600 shadow-lg font-bold text-white" : "hover:bg-slate-800/50 text-slate-400"}`}
           >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            {isDarkMode ? "Kunduzgi rejim" : "Tungi rejim"}
+            <item.icon size={20} /> {item.label}
           </button>
-
-          <button className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold text-red-500 hover:bg-red-500/10 transition-all">
-            <LogOut size={20} />
-            Chiqish
-          </button>
-        </div>
+        ))}
+      </nav>
+      <div className="p-4 border-t border-slate-800">
+        <button
+          onClick={() => setIsAuthenticated(false)}
+          className="w-full flex items-center gap-3 p-4 text-red-400 hover:bg-red-500/10 rounded-xl"
+        >
+          <LogOut size={20} /> Chiqish
+        </button>
       </div>
     </aside>
   );
 };
 
-// ENG MUHIM QISMI:
 export default Sidebar;

@@ -4,25 +4,25 @@ const StatsCards = ({ stats, isDarkMode }) => {
   const cards = [
     {
       label: "Umumiy Savdo",
-      val: `${stats.totalRevenue.toLocaleString()} uzs`,
+      val: `${(stats?.totalRevenue || 0).toLocaleString()} uzs`,
       icon: DollarSign,
       color: "text-teal-600",
     },
     {
       label: "Buyurtmalar",
-      val: `${stats.totalOrders} ta`,
+      val: `${stats?.totalOrders || 0} ta`,
       icon: Package,
       color: "text-blue-600",
     },
     {
       label: "Sotilganlar",
-      val: `${stats.totalItems} dona`,
+      val: `${stats?.totalItems || 0} dona`,
       icon: ShoppingBag,
       color: "text-orange-600",
     },
     {
       label: "Top Taom",
-      val: stats.topDish,
+      val: stats?.topDish || "Yo'q",
       icon: Utensils,
       color: "text-purple-600",
     },
@@ -33,7 +33,7 @@ const StatsCards = ({ stats, isDarkMode }) => {
       {cards.map((s, i) => (
         <div
           key={i}
-          className={`p-6 rounded-[2rem] shadow-sm border transition-colors ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}
+          className={`p-6 rounded-[2rem] shadow-sm border transition-all ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}
         >
           <s.icon className={`${s.color} mb-2`} size={20} />
           <p className="text-slate-400 text-[10px] font-bold uppercase">

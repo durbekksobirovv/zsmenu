@@ -5,6 +5,23 @@ const OrderCard = ({ order, updateStatus, archiveOrder, isDarkMode }) => {
   // Backenddan kelayotgan ID ni aniqlab olamiz
   const orderId = order.id || order._id;
 
+  // app/components/admin/OrdersList.jsx
+  const OrdersList = ({
+    orders = [],
+    updateStatus,
+    archiveOrder,
+    isDarkMode,
+  }) => {
+    // orders = [] - bu default qiymat, agar orders undefined kelsa, xato bermaydi
+
+    if (!orders || orders.length === 0) {
+      return (
+        <div className={`text-center py-20 ...`}>Hozircha buyurtmalar yo'q</div>
+      );
+    }
+    // ... qolgan kod
+  };
+
   return (
     <div
       className={`rounded-3xl p-6 shadow-sm border transition-all ${
@@ -79,6 +96,6 @@ const OrderCard = ({ order, updateStatus, archiveOrder, isDarkMode }) => {
       </div>
     </div>
   );
-};
+};;
 
 export default OrderCard;
