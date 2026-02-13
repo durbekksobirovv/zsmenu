@@ -42,10 +42,10 @@ export const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => (
         <div className="flex items-center justify-between mb-16">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg shadow-emerald-500/20">
-              M
+              Z
             </div>
             <span className="font-black text-xl text-white uppercase italic">
-              FAST<span className="text-emerald-500">MENU</span>
+              Z.s<span className="text-emerald-500">MENU</span>
             </span>
           </div>
           <button

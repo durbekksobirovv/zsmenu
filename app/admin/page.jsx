@@ -9,7 +9,17 @@ import { AddProductForm } from "@/app/components/admn/AddProductForm";
 import { CategoryManager } from "@/app/components/admn/CategoryManager";
 import { DetailedStats } from "@/app/components/admn/DetailedStats";
 
-import { Loader2, Menu, Sparkles, BellRing } from "lucide-react";
+import {
+  Loader2,
+  Menu,
+  Sparkles,
+  BellRing,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  Layers,
+  PlusCircle,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminPanel() {
@@ -32,7 +42,7 @@ export default function AdminPanel() {
   });
   const [newCatName, setNewCatName] = useState("");
 
-  // --- API FUNKSIYALARI ---
+  // --- API FUNKSIYALARI (O'zgarmadi) ---
   const handleAddProduct = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -94,7 +104,6 @@ export default function AdminPanel() {
       const currentIds = orders.map((o) => o._id || o.id);
       localStorage.setItem("ignored_order_ids", JSON.stringify(currentIds));
       setOrders([...orders]);
-      alert("Statistika tozalandi!");
     }
   }, [orders]);
 
@@ -176,7 +185,6 @@ export default function AdminPanel() {
     }
   }, [isAdmin, loadData]);
 
-  // --- STATISTIKA HISOBI ---
   const processedStats = useMemo(() => {
     const report = {
       kunlik: { summa: 0, count: 0, items: {}, sorted: [] },
@@ -202,7 +210,6 @@ export default function AdminPanel() {
       const items = order.items || order.products || [];
       const oDate = new Date(order.date || order.createdAt || order.timestamp);
       const oKey = getLocalISO(isNaN(oDate.getTime()) ? now : oDate);
-
       const diffDays = Math.round(
         (new Date(todayStr).getTime() - new Date(oKey).getTime()) /
           (1000 * 60 * 60 * 24),
@@ -217,7 +224,6 @@ export default function AdminPanel() {
           report[p].items[name] = (report[p].items[name] || 0) + qty;
         });
       };
-
       if (oKey === todayStr) addData("kunlik");
       if (diffDays >= 0 && diffDays <= 7) addData("haftalik");
       if (diffDays >= 0 && diffDays <= 30) addData("oylik");
@@ -227,15 +233,32 @@ export default function AdminPanel() {
       report[p].sorted = Object.entries(report[p].items)
         .map(([name, qty]) => ({ name, qty }))
         .sort((a, b) => b.qty - a.qty);
-      // StatsView slice(0,10) qiladi, DetailedStats esa hammasini ko'rsatadi
     });
     return report;
   }, [orders]);
 
   if (!isAdmin) return <LoginScreen setIsAdmin={setIsAdmin} />;
 
+  // Sarlavha yordamchisi
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case "stats":
+        return { label: "Analitika", icon: <LayoutDashboard size={18} /> };
+      case "orders":
+        return { label: "Buyurtmalar", icon: <ShoppingBag size={18} /> };
+      case "products":
+        return { label: "Mahsulotlar", icon: <Package size={18} /> };
+      case "categories":
+        return { label: "Kategoriyalar", icon: <Layers size={18} /> };
+      case "add-product":
+        return { label: "Yangi Mahsulot", icon: <PlusCircle size={18} /> };
+      default:
+        return { label: "Admin Panel", icon: <Sparkles size={18} /> };
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+    <div className="flex min-h-screen bg-[#F1F5F9] text-slate-900 font-sans">
       <Sidebar
         activeTab={activeTab === "detailed-stats" ? "stats" : activeTab}
         setActiveTab={setActiveTab}
@@ -243,130 +266,186 @@ export default function AdminPanel() {
         setIsOpen={setIsSidebarOpen}
       />
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 px-8 flex items-center justify-between z-20">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        {/* Yuqori Header - Modern & Glass */}
+        <header className="h-20 bg-white/70 backdrop-blur-xl border-b border-white/20 px-6 lg:px-10 flex items-center justify-between z-30 sticky top-0">
           <div className="flex items-center gap-4">
             <button
-              className="lg:hidden p-2 text-slate-600"
+              className="lg:hidden p-2.5 bg-white shadow-sm rounded-xl text-slate-600 hover:bg-slate-50 transition-all"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <Menu />
+              <Menu size={20} />
             </button>
-            <h1 className="font-black text-slate-900 uppercase text-[10px] tracking-widest italic flex items-center gap-2">
-              <Sparkles size={14} className="text-emerald-500" />
-              {activeTab.replace("-", " ")}
-            </h1>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-indigo-600">
+                {getPageTitle().icon}
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
+                  Boshqaruv
+                </span>
+              </div>
+              <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">
+                {getPageTitle().label}
+              </h1>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            {loading && (
-              <Loader2 className="animate-spin text-emerald-500" size={16} />
-            )}
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
-              <BellRing size={12} className="text-emerald-600" />
-              <span className="text-[9px] font-black text-emerald-700 uppercase italic tracking-widest">
-                Live Active
+
+          <div className="flex items-center gap-3">
+            <AnimatePresence>
+              {loading && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-100 rounded-lg shadow-sm"
+                >
+                  <Loader2 className="animate-spin text-indigo-500" size={14} />
+                  <span className="text-[11px] font-medium text-slate-500">
+                    Yangilanmoqda
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 border border-indigo-500">
+              <div className="relative">
+                <BellRing size={14} className="text-white animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full border-2 border-indigo-600"></span>
+              </div>
+              <span className="text-[10px] font-bold text-white uppercase tracking-wider">
+                Live System
               </span>
             </div>
           </div>
         </header>
 
-        <div className="p-8 flex-1 overflow-y-auto no-scrollbar">
-          <AnimatePresence mode="wait">
-            {activeTab === "stats" && (
-              <motion.div
-                key="stats"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
-                <StatsView
-                  data={processedStats[statsSubTab]}
-                  subTab={statsSubTab}
-                  setSubTab={setStatsSubTab}
-                  onReset={handleResetArchive}
-                  onDetailClick={() => setActiveTab("detailed-stats")}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === "detailed-stats" && (
-              <motion.div
-                key="detailed"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <DetailedStats
-                  data={processedStats[statsSubTab]}
-                  onBack={() => setActiveTab("stats")}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === "orders" && (
-              <motion.div
-                key="orders"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <OrdersView
-                  orders={orders}
-                  onDelete={(id) => deleteItem(id, "orders")}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === "products" && (
-              <motion.div
-                key="products"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-20"
-              >
-                {products.map((p) => (
-                  <ProductCard
-                    key={p._id || p.id}
-                    item={p}
-                    onDelete={(id) => deleteItem(id, "products")}
+        {/* Asosiy Content Area */}
+        <div className="p-6 lg:p-10 flex-1 overflow-y-auto custom-scrollbar bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:32px_32px] [background-position:center]">
+          <div className="max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              {activeTab === "stats" && (
+                <motion.div
+                  key="stats"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <StatsView
+                    data={processedStats[statsSubTab]}
+                    subTab={statsSubTab}
+                    setSubTab={setStatsSubTab}
+                    onReset={handleResetArchive}
+                    onDetailClick={() => setActiveTab("detailed-stats")}
                   />
-                ))}
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
-            {activeTab === "add-product" && (
-              <motion.div
-                key="add"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <AddProductForm
-                  form={productForm}
-                  setForm={setProductForm}
-                  categories={categories}
-                  onSubmit={handleAddProduct}
-                />
-              </motion.div>
-            )}
+              {activeTab === "detailed-stats" && (
+                <motion.div
+                  key="detailed"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                >
+                  <DetailedStats
+                    data={processedStats[statsSubTab]}
+                    onBack={() => setActiveTab("stats")}
+                  />
+                </motion.div>
+              )}
 
-            {activeTab === "categories" && (
-              <motion.div
-                key="cats"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <CategoryManager
-                  categories={categories}
-                  onAdd={handleAddCategory}
-                  onDelete={(id) => deleteItem(id, "categories")}
-                  newCat={newCatName}
-                  setNewCat={setNewCatName}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {activeTab === "orders" && (
+                <motion.div
+                  key="orders"
+                  initial={{ opacity: 0, filter: "blur(10px)" }}
+                  animate={{ opacity: 1, filter: "blur(0px)" }}
+                  className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden"
+                >
+                  <OrdersView
+                    orders={orders}
+                    onDelete={(id) => deleteItem(id, "orders")}
+                  />
+                </motion.div>
+              )}
+
+              {activeTab === "products" && (
+                <motion.div
+                  key="products"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"
+                >
+                  {products.map((p, idx) => (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      key={p._id || p.id}
+                    >
+                      <ProductCard
+                        item={p}
+                        onDelete={(id) => deleteItem(id, "products")}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+
+              {activeTab === "add-product" && (
+                <motion.div
+                  key="add"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="max-w-5xl mx-auto"
+                >
+                  <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+                    <AddProductForm
+                      form={productForm}
+                      setForm={setProductForm}
+                      categories={categories}
+                      onSubmit={handleAddProduct}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "categories" && (
+                <motion.div
+                  key="cats"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="max-w-3xl mx-auto"
+                >
+                  <CategoryManager
+                    categories={categories}
+                    onAdd={handleAddCategory}
+                    onDelete={(id) => deleteItem(id, "categories")}
+                    newCat={newCatName}
+                    setNewCat={setNewCatName}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </main>
+
+      {/* Global CSS for scrollbar */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e1;
+        }
+      `}</style>
     </div>
   );
 }

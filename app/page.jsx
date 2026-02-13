@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { IconBasket } from "@tabler/icons-react";
 import {
   Search,
   ShoppingBasket,
@@ -14,10 +13,12 @@ import {
   X,
   Heart,
   ClipboardList,
+  MapPin,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- MAHSULOT KARTASI (Kaltalashtirilgan versiya) ---
+// --- MAHSULOT KARTASI ---
 const FoodCard = ({ food, onToggle, basketItem }) => {
   const [showHeart, setShowHeart] = useState(false);
   const quantity = basketItem ? basketItem.quantity : 0;
@@ -32,7 +33,6 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
       layout
       className="bg-white rounded-[1.5rem] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full"
     >
-      {/* RASM QISMI - h-44 dan h-32 ga tushirildi */}
       <div
         className="relative h-32 w-full overflow-hidden cursor-pointer"
         onDoubleClick={handleDoubleClick}
@@ -61,7 +61,6 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
         </AnimatePresence>
       </div>
 
-      {/* MA'LUMOT QISMI - p-4 dan p-3 ga kamaytirildi */}
       <div className="p-3 flex flex-col flex-1 justify-between gap-2">
         <div>
           <h3 className="font-bold text-[14px] text-gray-800 leading-tight line-clamp-1">
@@ -71,7 +70,6 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
             {food.title || "Mazali taom"}
           </p>
         </div>
-
         <div className="space-y-2">
           <div className="flex items-baseline gap-1">
             <span className="text-base font-black text-[#167472]">
@@ -81,8 +79,6 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
               so'm
             </span>
           </div>
-
-          {/* TUGMA - h-12 dan h-10 ga tushirildi */}
           <div className="h-10 relative overflow-hidden">
             <AnimatePresence mode="wait">
               {quantity === 0 ? (
@@ -94,8 +90,7 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
                   onClick={() => onToggle(food, "increase")}
                   className="w-full h-full bg-[#167472] text-white rounded-xl flex items-center justify-center gap-1 font-bold text-[11px] active:scale-95 transition-transform"
                 >
-                  <ShoppingBasket size={14} />
-                  Qo'shish
+                  <ShoppingBasket size={14} /> Qo'shish
                 </motion.button>
               ) : (
                 <motion.div
@@ -130,6 +125,7 @@ const FoodCard = ({ food, onToggle, basketItem }) => {
   );
 };
 
+// --- ASOSIY SAHIFA ---
 const MenuPage = () => {
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState(["Barchasi"]);
@@ -141,6 +137,7 @@ const MenuPage = () => {
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("+998");
 
   useEffect(() => {
@@ -180,27 +177,38 @@ const MenuPage = () => {
     setBasket((prev) => {
       const exists = prev.find((i) => i._id === f._id);
       if (action === "increase") {
-        if (exists) {
+        if (exists)
           return prev.map((i) =>
             i._id === f._id ? { ...i, quantity: i.quantity + 1 } : i,
           );
-        }
         return [...prev, { ...f, quantity: 1 }];
       }
       if (action === "decrease") {
-        if (exists?.quantity > 1) {
+        if (exists?.quantity > 1)
           return prev.map((i) =>
             i._id === f._id ? { ...i, quantity: i.quantity - 1 } : i,
           );
-        }
         return prev.filter((i) => i._id !== f._id);
       }
       return prev;
     });
   };
 
+  // Telefon raqami uchun maxsus handler
+  const handlePhoneChange = (e) => {
+    const val = e.target.value;
+    // Faqat "+" bilan boshlanishi va keyin raqamlar bo'lishini ta'minlash
+    if (val.startsWith("+998") && val.length <= 13) {
+      const onlyNums = val.slice(1); // "+" ni olib tashlab tekshiramiz
+      if (/^\d*$/.test(onlyNums)) {
+        setPhoneNumber(val);
+      }
+    }
+  };
+
   const sendOrder = async () => {
-    if (phoneNumber.length < 13) return alert("Raqamni to'liq kiriting!");
+    if (phoneNumber.length < 13)
+      return alert("Raqamni to'liq kiriting (+998XXXXXXXXX)");
     setSending(true);
     try {
       const res = await fetch(
@@ -241,21 +249,19 @@ const MenuPage = () => {
                   Xush kelibsiz
                 </p>
                 <h1 className="text-xl font-black text-gray-900 tracking-tight">
-                  Bizning <span className="text-[#167472]">Menyu</span>
+                  Z.s <span className="text-[#167472]">Menyu</span>
                 </h1>
               </div>
-              <button
-                onClick={() => setIsBasketOpen(true)}
-                className="relative p-2.5 bg-[#167472] rounded-xl text-white shadow-lg active:scale-95 transition-transform"
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsInfoModalOpen(true)}
+                className="w-12 h-12 bg-[#167472] rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg shadow-emerald-500/20 active:bg-[#0e4d4b] transition-colors"
               >
-                <IconBasket size={20} />
-                {basket.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-[9px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
-                    {basket.length}
-                  </span>
-                )}
-              </button>
+                Z
+              </motion.button>
             </div>
+
             <div className="relative group mb-2">
               <Search
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -270,7 +276,7 @@ const MenuPage = () => {
               />
             </div>
           </header>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar px-5 py-3">
+          <div className="flex gap-2 overflow-x-auto w-full no-scrollbar px-5 py-3">
             {categories.map((cat, i) => (
               <button
                 key={i}
@@ -287,7 +293,7 @@ const MenuPage = () => {
           </div>
         </div>
 
-        {/* MAIN CONTENT - Grid masofasi gap-3 qilib jipslashtirildi */}
+        {/* MAIN CONTENT */}
         <main className="flex-1 p-4 pb-32">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 opacity-50">
@@ -320,10 +326,17 @@ const MenuPage = () => {
             onClick={() => setIsBasketOpen(true)}
             className="flex flex-col items-center text-gray-400 hover:text-white"
           >
-            <ShoppingBasket
-              size={18}
-              className={basket.length > 0 ? "text-orange-500" : ""}
-            />
+            <div className="relative">
+              <ShoppingBasket
+                size={18}
+                className={basket.length > 0 ? "text-orange-500" : ""}
+              />
+              {basket.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {basket.length}
+                </span>
+              )}
+            </div>
             <span className="text-[9px] font-medium">Savat</span>
           </button>
           <button className="flex flex-col items-center text-gray-400 hover:text-white">
@@ -332,7 +345,74 @@ const MenuPage = () => {
           </button>
         </nav>
 
-        {/* MODALLAR (O'zgarishsiz qoldi) */}
+        {/* MODALLAR */}
+
+        {/* 1. RESTORAN INFO MODAL */}
+        <AnimatePresence>
+          {isInfoModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsInfoModalOpen(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.85, opacity: 0, y: 20 }}
+                className="bg-white w-full max-w-[340px] rounded-[2.5rem] p-8 relative z-10 overflow-hidden shadow-2xl"
+              >
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-[#167472] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#167472]/20">
+                    <span className="text-4xl font-black text-white">Z</span>
+                  </div>
+                  <h2 className="text-2xl font-black text-gray-900 mb-1">
+                    Z.s Restoran
+                  </h2>
+                  <p className="text-xs text-gray-400 mb-6 font-bold tracking-widest uppercase">
+                    Premium Quality
+                  </p>
+
+                  <div className="space-y-4 mb-8 text-left bg-gray-50 p-5 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <Clock size={16} className="text-[#167472]" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">
+                          Ish vaqti
+                        </span>
+                        <span className="text-sm font-bold text-gray-800">
+                          09:00 — 23:00
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <MapPin size={16} className="text-[#167472]" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">
+                          Manzil
+                        </span>
+                        <span className="text-sm font-bold text-gray-800">
+                          Toshkent, O'zbekiston
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsInfoModalOpen(false)}
+                    className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform"
+                  >
+                    Tushunarli
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* 2. BASKET MODAL */}
         <AnimatePresence>
           {isBasketOpen && (
             <>
@@ -443,7 +523,7 @@ const MenuPage = () => {
           )}
         </AnimatePresence>
 
-        {/* 2. PHONE MODAL */}
+        {/* 3. PHONE MODAL - 13 RAQAM CHEKLOVI BILAN */}
         <AnimatePresence>
           {showPhoneModal && (
             <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
@@ -466,16 +546,20 @@ const MenuPage = () => {
                 <h3 className="text-lg font-black text-gray-900 mb-2">
                   Telefon raqam
                 </h3>
+                <p className="text-[10px] text-gray-400 mb-4 font-bold uppercase">
+                  Faqat 13 ta belgi
+                </p>
                 <input
                   type="tel"
+                  maxLength={13} // 13 ta belgi cheklovi
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={handlePhoneChange} // Maska funksiyasi
                   className="w-full bg-gray-100 rounded-xl py-3 px-4 text-center text-base font-bold outline-none mb-6 border-2 border-transparent focus:border-[#167472]/20"
                 />
                 <button
                   onClick={sendOrder}
                   disabled={sending}
-                  className="w-full bg-[#167472] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="w-full bg-[#167472] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
                 >
                   {sending ? (
                     <Loader2 className="animate-spin" size={18} />
@@ -488,7 +572,7 @@ const MenuPage = () => {
           )}
         </AnimatePresence>
 
-        {/* 3. SUCCESS MODAL */}
+        {/* 4. SUCCESS MODAL */}
         <AnimatePresence>
           {showSuccess && (
             <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 text-center">

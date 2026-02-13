@@ -23,12 +23,12 @@ export const OrdersView = ({ orders, onDelete }) => {
   return (
     <div className="space-y-4 pb-24 w-full px-2 md:px-6">
       {/* 🌤️ CLEAN HEADER */}
-      <div className="w-full flex items-center justify-between bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm">
+      <div className="w-full flex items-center mt-6 justify-between bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm">
         <div className="flex items-center gap-5">
           <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
             <PackageOpen size={28} className="text-emerald-500" />
           </div>
-          <div>
+          <div >
             <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase">
               Buyurtmalar{" "}
               <span className="text-emerald-500 italic">Navbati</span>
