@@ -5,7 +5,7 @@ import { Lock } from "lucide-react";
 export const LoginScreen = ({ setIsAdmin }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
-  const ADMIN_PASSWORD = "123";
+  const ADMIN_PASSWORD = "Admin123";
 
   const handleLogin = (e) => {
     e.preventDefault();
